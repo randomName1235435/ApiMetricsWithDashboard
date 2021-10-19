@@ -1,4 +1,6 @@
 ﻿using ApiMetricsWithDashboard.Api.Dto;
+using ApiMetricsWithDashboard.Api.Metrics;
+using App.Metrics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
@@ -13,6 +15,7 @@ namespace ApiMetricsWithDashboard.Api.Controllers
     public class SampleController : ControllerBase
     {
         private static Dictionary<Guid, SampleDto> repository = new Dictionary<Guid, SampleDto>();
+        private readonly IMetrics metrics;
 
         private readonly ILogger<SampleController> _logger;
 
@@ -30,11 +33,11 @@ namespace ApiMetricsWithDashboard.Api.Controllers
 
         private async Task<IEnumerable<SampleDto>> GetAsync()
         {
-            return await Task.Run<IEnumerable<SampleDto>>(() => repository.Values.AsEnumerable());
+            return await Task.Run(() => repository.Values.AsEnumerable());
         }
         private async Task<SampleDto> GetAsync(Guid id)
         {
-            return await Task.Run<SampleDto>(() => { return repository[id]; });
+            return await Task.Run(() => { return repository[id]; });
         }
 
         [HttpGet("/{sampleId}")]
@@ -48,6 +51,7 @@ namespace ApiMetricsWithDashboard.Api.Controllers
         public async Task<IActionResult> Create([FromBody] SampleDto itemToCreate)
         {
             await CreateAsync(itemToCreate);
+            metrics.Measure.Counter.Increment(MetricsRegistry.CreatedCustomerCounter);
             return CreatedAtAction("GetSample", new { sampleId = itemToCreate.Id }, itemToCreate.Id);
         }
 
